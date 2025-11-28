@@ -101,13 +101,13 @@ public class LogiledView implements CCard {
 		Color color = null;
 		try {
 			color = Color.web(value);
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException _) {
 			var split = value.replace(",", " ").split(" ");
 			if (split.length == 3) {
 				try {
 					color = Color.rgb(Integer.parseInt(split[0]), Integer.parseInt(split[1]),
 							Integer.parseInt(split[2]));
-				} catch (NumberFormatException nfe) {
+				} catch (NumberFormatException _) {
 					color = Color.BLACK;
 				}
 			} else {
