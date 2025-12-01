@@ -140,7 +140,7 @@ public class LogiledView implements CCard {
 			public void onCommand(String command, String... args) {
 				var commandArgs = String.format("%s %s", command, StringUtils.join(args, " ")).trim();
 				var color = getColor(commandArgs);
-				settings.persist(LogiledViewFactory.SETTING_LOGILED_COLOR, commandArgs);
+				settings.persist(LogiledViewFactory.SETTING_LOGILED_COLOR, colorToHex(color));
 				if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
 					eventManager.echo("Lighting changed");
 					lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
@@ -162,6 +162,11 @@ public class LogiledView implements CCard {
 				return false;
 			}
 		}));
+	}
+
+	private static String colorToHex(Color color) {
+		return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255),
+				(int) (color.getBlue() * 255));
 	}
 
 }
