@@ -4,10 +4,10 @@ import java.util.Map;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.spi.CCard;
-import dev.tim9h.rcp.spi.CCardFactory;
+import dev.tim9h.rcp.spi.Plugin;
+import dev.tim9h.rcp.spi.PluginFactory;
 
-public class LogiledViewFactory implements CCardFactory {
+public class LogiledViewFactory implements PluginFactory {
 
 	static final String SETTING_LOGILED_COLOR = "logiled.lighting.color";
 
@@ -20,7 +20,7 @@ public class LogiledViewFactory implements CCardFactory {
 	}
 
 	@Override
-	public CCard createCCard() {
+	public Plugin create() {
 		return view;
 	}
 

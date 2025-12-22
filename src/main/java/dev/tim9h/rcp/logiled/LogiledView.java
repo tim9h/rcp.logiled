@@ -15,11 +15,11 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.logiled.service.LightingService;
 import dev.tim9h.rcp.logiled.util.ColorUtils;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Mode;
+import dev.tim9h.rcp.spi.Plugin;
 import javafx.scene.paint.Color;
 
-public class LogiledView implements CCard {
+public class LogiledView implements Plugin {
 
 	private static final String EVENT_LIGHTING_CHANGED = "LOGILED_LIGHTING_CHANGED";
 
@@ -54,7 +54,7 @@ public class LogiledView implements CCard {
 
 	@Override
 	public void initBus(EventManager em) {
-		CCard.super.initBus(eventManager);
+		Plugin.super.initBus(eventManager);
 		em.listen("MODE_ALERT", this::handleAlert);
 		em.listen("MODE_AFK", this::handleAfk);
 	}
