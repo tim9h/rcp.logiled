@@ -2,6 +2,7 @@ package dev.tim9h.rcp.logiled;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +21,8 @@ import dev.tim9h.rcp.spi.Plugin;
 import javafx.scene.paint.Color;
 
 public class LogiledView implements Plugin {
+
+	private static final String SETTING_LOGILED_COLOR = "logiled.lighting.color";
 
 	private static final String EVENT_LIGHTING_CHANGED = "LOGILED_LIGHTING_CHANGED";
 
@@ -45,6 +48,11 @@ public class LogiledView implements Plugin {
 	}
 
 	@Override
+	public String getId() {
+		return "logiled";
+	}
+
+	@Override
 	public void init() {
 		logger.info(() -> "Created LogiledView");
 		if (settings.getStringSet(SETTING_MODES).contains("alert")) {
@@ -62,7 +70,7 @@ public class LogiledView implements Plugin {
 	private void handleAlert(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
 			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = getColor(settings.getString(LogiledViewFactory.SETTING_LOGILED_COLOR));
+				var color = getColor(settings.getString(SETTING_LOGILED_COLOR));
 				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
 				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 			} else {
@@ -83,7 +91,7 @@ public class LogiledView implements Plugin {
 	private void handleAfk(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
 			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = getColor(settings.getString(LogiledViewFactory.SETTING_LOGILED_COLOR));
+				var color = getColor(settings.getString(SETTING_LOGILED_COLOR));
 				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
 				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 			} else {
@@ -133,14 +141,14 @@ public class LogiledView implements Plugin {
 
 			@Override
 			public void onEnable() {
-				onCommand(settings.getString(LogiledViewFactory.SETTING_LOGILED_COLOR));
+				onCommand(settings.getString(SETTING_LOGILED_COLOR));
 			}
 
 			@Override
 			public void onCommand(String command, String... args) {
 				var commandArgs = String.format("%s %s", command, StringUtils.join(args, " ")).trim();
 				var color = getColor(commandArgs);
-				settings.persist(LogiledViewFactory.SETTING_LOGILED_COLOR, colorToHex(color));
+				settings.persist(SETTING_LOGILED_COLOR, colorToHex(color));
 				if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
 					eventManager.echo("Lighting changed");
 					lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
@@ -167,6 +175,11 @@ public class LogiledView implements Plugin {
 	private static String colorToHex(Color color) {
 		return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255),
 				(int) (color.getBlue() * 255));
+	}
+
+	@Override
+	public Map<String, String> getSettingsContributions() {
+		return Map.of(SETTING_LOGILED_COLOR, "cyan");
 	}
 
 }
