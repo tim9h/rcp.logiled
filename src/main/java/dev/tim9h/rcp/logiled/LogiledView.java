@@ -10,12 +10,14 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.logiled.service.LightingService;
 import dev.tim9h.rcp.logiled.util.ColorUtils;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
+import dev.tim9h.rcp.spi.CommandNode;
 import dev.tim9h.rcp.spi.Mode;
 import dev.tim9h.rcp.spi.Plugin;
 import javafx.scene.paint.Color;
@@ -70,12 +72,12 @@ public class LogiledView implements Plugin {
 	private void handleAlert(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
 			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = getColor(settings.getString(SETTING_LOGILED_COLOR));
+				var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
 				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+				eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 			} else {
 				lightingService.shutdown();
-				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED));
+				eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
 			}
 		} else {
 			enableAlertLighting();
@@ -85,44 +87,24 @@ public class LogiledView implements Plugin {
 	private void enableAlertLighting() {
 		var color = Color.RED;
 		lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-		eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+		eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 	}
 
 	private void handleAfk(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
 			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = getColor(settings.getString(SETTING_LOGILED_COLOR));
+				var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
 				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+				eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 			} else {
 				lightingService.shutdown();
-				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED));
+				eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
 			}
 		} else {
 			var color = Color.BLACK;
 			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-			eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+			eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 		}
-	}
-
-	private static Color getColor(String value) {
-		Color color = null;
-		try {
-			color = Color.web(value);
-		} catch (IllegalArgumentException _) {
-			var split = value.replace(",", " ").split(" ");
-			if (split.length == 3) {
-				try {
-					color = Color.rgb(Integer.parseInt(split[0]), Integer.parseInt(split[1]),
-							Integer.parseInt(split[2]));
-				} catch (NumberFormatException _) {
-					color = Color.BLACK;
-				}
-			} else {
-				color = Color.BLACK;
-			}
-		}
-		return color;
 	}
 
 	@Override
@@ -141,27 +123,18 @@ public class LogiledView implements Plugin {
 
 			@Override
 			public void onEnable() {
-				onCommand(settings.getString(SETTING_LOGILED_COLOR));
+				setColor(settings.getString(SETTING_LOGILED_COLOR));
 			}
 
 			@Override
-			public void onCommand(String command, String... args) {
-				var commandArgs = String.format("%s %s", command, StringUtils.join(args, " ")).trim();
-				var color = getColor(commandArgs);
-				settings.persist(SETTING_LOGILED_COLOR, colorToHex(color));
-				if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
-					eventManager.echo("Lighting changed");
-					lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-					eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
-				} else {
-					eventManager.echo("Alert mode active");
-				}
+			public Optional<CommandNode> getModeCommands() {
+				return new CommandBuilder().command("logiled").argumentAction(LogiledView.this::setColor).build();
 			}
 
 			@Override
 			public void onDisable() {
 				lightingService.shutdown();
-				eventManager.post(new CcEvent(EVENT_LIGHTING_CHANGED));
+				eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
 				eventManager.echo("Disabled lighting control");
 			}
 
@@ -172,9 +145,16 @@ public class LogiledView implements Plugin {
 		}));
 	}
 
-	private static String colorToHex(Color color) {
-		return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255),
-				(int) (color.getBlue() * 255));
+	private void setColor(String c) {
+		var color = ColorUtils.getColor(c);
+		settings.persist(SETTING_LOGILED_COLOR, ColorUtils.colorToHex(color));
+		if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
+			eventManager.echo("Lighting changed");
+			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
+			eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+		} else {
+			eventManager.echo("Alert mode active");
+		}
 	}
 
 	@Override

@@ -187,4 +187,29 @@ public class ColorUtils {
 		return (int) (value >= 1.0 ? 255 : value * 256.0);
 	}
 
+	public static String colorToHex(Color color) {
+		return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255),
+				(int) (color.getBlue() * 255));
+	}
+
+	public static Color getColor(String value) {
+		Color color = null;
+		try {
+			color = Color.web(value);
+		} catch (IllegalArgumentException _) {
+			var split = value.replace(",", " ").split(" ");
+			if (split.length == 3) {
+				try {
+					color = Color.rgb(Integer.parseInt(split[0]), Integer.parseInt(split[1]),
+							Integer.parseInt(split[2]));
+				} catch (NumberFormatException _) {
+					color = Color.BLACK;
+				}
+			} else {
+				color = Color.BLACK;
+			}
+		}
+		return color;
+	}
+
 }
