@@ -13,7 +13,7 @@ public class ColorUtils {
 		// hide implicit public constructor
 	}
 
-	private static List<NamedColor> getColorList() {
+	private static synchronized List<NamedColor> getColorList() {
 		if (colorList == null) {
 			colorList = new ArrayList<>();
 			colorList.add(new NamedColor("AliceBlue", 0xF0, 0xF8, 0xFF));
@@ -174,7 +174,7 @@ public class ColorUtils {
 		if (closestMatch != null) {
 			return closestMatch.name();
 		} else {
-			return String.format("rgb(%d, %d, %d", Integer.valueOf(r), Integer.valueOf(g), Integer.valueOf(b));
+			return "rgb(" + r + ", " + g + ", " + b + ")";
 		}
 	}
 
@@ -188,8 +188,10 @@ public class ColorUtils {
 	}
 
 	public static String colorToHex(Color color) {
-		return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255),
-				(int) (color.getBlue() * 255));
+		var rgb = ((int) (color.getRed() * 255) << 16) | ((int) (color.getGreen() * 255) << 8)
+				| (int) (color.getBlue() * 255);
+		var hex = Integer.toHexString(rgb).toUpperCase();
+		return "#" + "0".repeat(6 - hex.length()) + hex;
 	}
 
 	public static Color getColor(String value) {

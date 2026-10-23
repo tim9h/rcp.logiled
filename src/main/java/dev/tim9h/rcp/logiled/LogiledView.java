@@ -71,16 +71,20 @@ public class LogiledView implements Plugin {
 
 	private void handleAlert(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
-			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
-				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-				eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
-			} else {
-				lightingService.shutdown();
-				eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
-			}
+			restoreLighting();
 		} else {
 			enableAlertLighting();
+		}
+	}
+
+	private void restoreLighting() {
+		if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
+			var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
+			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
+			eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
+		} else {
+			lightingService.shutdown();
+			eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
 		}
 	}
 
@@ -92,14 +96,7 @@ public class LogiledView implements Plugin {
 
 	private void handleAfk(Object[] args) {
 		if ("off".equals(StringUtils.join(args))) {
-			if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
-				var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
-				lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-				eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
-			} else {
-				lightingService.shutdown();
-				eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
-			}
+			restoreLighting();
 		} else {
 			var color = Color.BLACK;
 			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
@@ -109,7 +106,7 @@ public class LogiledView implements Plugin {
 
 	@Override
 	public void onShutdown() {
-		lightingService.shutdown();
+		lightingService.close();
 	}
 
 	@Override
@@ -147,7 +144,10 @@ public class LogiledView implements Plugin {
 
 	private void setColor(String c) {
 		var color = ColorUtils.getColor(c);
-		settings.persist(SETTING_LOGILED_COLOR, ColorUtils.colorToHex(color));
+		var hex = ColorUtils.colorToHex(color);
+		if (!hex.equalsIgnoreCase(settings.getString(SETTING_LOGILED_COLOR))) {
+			settings.persist(SETTING_LOGILED_COLOR, hex);
+		}
 		if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
 			eventManager.echo("Lighting changed");
 			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
