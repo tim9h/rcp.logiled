@@ -15,6 +15,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.logiled.service.LightingService;
 import dev.tim9h.rcp.logiled.util.ColorUtils;
+import dev.tim9h.rcp.service.ModeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.CommandNode;
@@ -30,8 +31,6 @@ public class LogiledView implements Plugin {
 
 	private static final String MODE_LOGILED = "logiled";
 
-	private static final String SETTING_MODES = "core.modes";
-
 	@InjectLogger
 	private Logger logger;
 
@@ -43,6 +42,9 @@ public class LogiledView implements Plugin {
 
 	@Inject
 	private Settings settings;
+
+	@Inject
+	private ModeService modeService;
 
 	@Override
 	public String getName() {
@@ -57,28 +59,16 @@ public class LogiledView implements Plugin {
 	@Override
 	public void init() {
 		logger.info(() -> "Created LogiledView");
-		if (settings.getStringSet(SETTING_MODES).contains("alert")) {
-			enableAlertLighting();
-		}
 	}
 
 	@Override
 	public void initBus(EventManager em) {
 		Plugin.super.initBus(eventManager);
-		em.listen("MODE_ALERT", this::handleAlert);
 		em.listen("MODE_AFK", this::handleAfk);
 	}
 
-	private void handleAlert(Object[] args) {
-		if ("off".equals(StringUtils.join(args))) {
-			restoreLighting();
-		} else {
-			enableAlertLighting();
-		}
-	}
-
 	private void restoreLighting() {
-		if (settings.getStringSet(SETTING_MODES).contains(MODE_LOGILED)) {
+		if (modeService.isModeActive(MODE_LOGILED)) {
 			var color = ColorUtils.getColor(settings.getString(SETTING_LOGILED_COLOR));
 			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
 			eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
@@ -86,12 +76,6 @@ public class LogiledView implements Plugin {
 			lightingService.shutdown();
 			eventManager.post(new Event(EVENT_LIGHTING_CHANGED));
 		}
-	}
-
-	private void enableAlertLighting() {
-		var color = Color.RED;
-		lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-		eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 	}
 
 	private void handleAfk(Object[] args) {
@@ -148,13 +132,9 @@ public class LogiledView implements Plugin {
 		if (!hex.equalsIgnoreCase(settings.getString(SETTING_LOGILED_COLOR))) {
 			settings.persist(SETTING_LOGILED_COLOR, hex);
 		}
-		if (!settings.getStringSet(SETTING_MODES).contains("alert")) {
-			eventManager.echo("Lighting changed");
-			lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
-			eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
-		} else {
-			eventManager.echo("Alert mode active");
-		}
+		eventManager.echo("Lighting changed");
+		lightingService.setLighting(color.getRed(), color.getGreen(), color.getBlue());
+		eventManager.post(new Event(EVENT_LIGHTING_CHANGED, ColorUtils.getNamedColorFromColor(color)));
 	}
 
 	@Override
